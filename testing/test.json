@@ -1,0 +1,15 @@
+{
+ "dedup_key": "SuperDomain:SaaS:All Individual SGA Shared Pool Lib Cache Hit Ratio (%)#NA",
+ "event_action": "NEW",
+ "payload": "[object Object]",
+ "routing_key": "",
+ "Action Status": "NEW",
+ "Acknowledged": "true",
+ "APM Alarm Unique Id": "N/A",
+ "Alarm Name": "Test Alarm Name",
+ "Alarm Status": "NEW",
+ "Metric Name": "Application.vSphere:Disk Highest Latency",
+ "Agent": "SuperDomain|testip|Infrastructure|Agent",
+ "Alarm Age": "2",
+ "Alarm Description": "Test message"
+}
