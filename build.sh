@@ -4,10 +4,6 @@
 # web API Data Collector => whdc
 # 
 
-# Configure remote repository to push latest build out.
-REPO="repo.shdw.fr:5000"
-
-
 # === Nothing to edit below this point ================
 
 if [ ! -f .build ]
@@ -48,12 +44,3 @@ echo "Tagging: mertin/${PNAME}:latest mertin/${PNAME}:${BUILD_VERSION}"
 docker tag mertin/${PNAME}:latest mertin/${PNAME}:${BUILD_VERSION}
 
 echo
-echo -n ">>> Push to $REPO [y/n]?: "
-read Push
-if [ "${Push}" == "y" ]
-  then
-      docker tag mertin/${PNAME}:latest ${REPO}/mertin/${PNAME}:k8s-${BUILD_VERSION}
-      docker tag mertin/${PNAME}:latest ${REPO}/mertin/${PNAME}:latest
-      # Push out latest
-      docker push ${REPO}/mertin/${PNAME}:latest
-fi

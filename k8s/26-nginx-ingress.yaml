@@ -1,0 +1,31 @@
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  annotations:
+     #cert-manager.io/cluster-issuer: letsencrypt-prod
+     #cert-manager.io/cluster-issuer: letsencrypt-staging
+     kubernetes.io/ingress.class: nginx-dmz
+     nginx.ingress.kubernetes.io/proxy-body-size: 512m
+     nginx.ingress.kubernetes.io/custom-http-errors: "403,500,501,502,503"
+     nginx.ingress.kubernetes.io/ssl-redirect: "false"
+  name: ingress-whdc
+  namespace: whdc
+  labels:
+    app: whdc-nginx
+    component: svc-whdc-frontend
+spec:
+  tls:
+    - hosts:
+      - whdc.<DOMAIN.TLD>
+      secretName: secret-whdc-prod
+  rules:
+    - host: whdc.<DOMAIN.TLD>
+      http:
+        paths:
+        - backend:
+            service:
+              name: svc-whdc-frontend
+              port:
+                number: 80
+          pathType: ImplementationSpecific

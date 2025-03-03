@@ -1,0 +1,81 @@
+---
+# 2023-04-04  J.M. Changed to official nginx ingress file.
+# Source: https://docs.nextcloud.com/server/25/admin_manual/installation/nginx.html#nextcloud-in-the-webroot-of-nginx
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nginx-confs
+  namespace: whdc
+data:
+  default.conf.template: |
+    server {
+        listen       80 default_server;
+        server_name   _;
+        root  $WEBROOT;
+        $INCLUDE
+    }
+
+  whdc.include.template: |
+    index index.php ;
+
+    access_log /var/log/nginx/access.log;
+    error_log /var/log/nginx/error.log warn;
+
+    sendfile off;
+
+    # Identify a way to get the server real IP.
+    set_real_ip_from  192.168.5.0/28;
+    set_real_ip_from  10.42.0.0/24;
+
+    fastcgi_hide_header X-Powered-By;
+    
+    # Upload limit
+    client_max_body_size 256k;
+    client_body_buffer_size 128k;
+    
+    
+    location / {
+      # First attempt to serve request as file, then
+      # as directory, then fall back to index.php
+      try_files $uri $uri/ /index.php?q=$uri&$args;
+    }
+
+    # Redirect server error pages to the static page /50x.html
+    error_page 500 502 503 504 /50x.html;
+    location = /50x.html {
+      root /usr/share/nginx/html;
+    }
+
+    # Pass the PHP scripts to PHP-FPM listening on 127.0.0.1:9000
+    location ~ [^/]\.php(/|$) {
+      fastcgi_split_path_info ^(.+\.php)(/.+)$;
+      fastcgi_pass $PHP_SOCKET;
+      fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+      fastcgi_param SCRIPT_NAME $fastcgi_script_name;
+      fastcgi_param PATH_INFO $fastcgi_path_info;
+      fastcgi_index index.php;
+      include fastcgi_params;
+    }
+
+    location ~* \.(jpg|jpeg|gif|png|css|js|ico|xml)$ {
+      expires 5d;
+    }
+
+    # Deny access to . files, for security
+    location ~ /\. {
+      log_not_found off;
+      deny all;
+    }
+
+    # Allow fpm ping and status from localhost
+    location ~ ^/(fpm-status|fpm-ping)$ {
+      access_log off;
+      allow 10.0.2.0/23;
+      allow 10.42.0.0/16;
+      allow 127.0.0.0/24;
+      allow 127.0.0.1;
+      deny all;
+      fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+      include fastcgi_params;
+      fastcgi_pass $PHP_SOCKET;
+    }

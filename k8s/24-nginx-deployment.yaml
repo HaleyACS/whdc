@@ -1,0 +1,70 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: whdc-nginx
+  namespace: whdc
+spec:
+  selector:
+    matchLabels:
+      app: whdc-nginx
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: whdc-nginx
+    spec:
+      volumes:
+        - name: nginx-confs
+          configMap:
+            name: nginx-confs
+        - name: whdc-nfs-app
+          persistentVolumeClaim:
+            claimName: whdc-pvc-app
+        - name: whdc-nfs-files
+          persistentVolumeClaim:
+            claimName: whdc-pvc-files
+      containers:
+      - name: nginx
+        image: nginx:alpine
+        imagePullPolicy: "Always"
+        env:
+          - name: PHP_SOCKET
+            value: svc-whdc-app:9000
+          - name: WEBROOT
+            value:  /var/www/html/site
+          - name: NGINX_X_FORWARDED_FOR
+            value: "true"
+          - name: INCLUDE
+            value: include /etc/nginx/conf.d/whdc.include;
+        ports:
+        - containerPort: 80
+        resources:
+          limits:
+            cpu: 200m
+            memory: 200Mi
+          requests:
+            cpu: 100m
+            memory: 100Mi
+        readinessProbe:
+          tcpSocket:
+            port: 80
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        livenessProbe:
+          tcpSocket:
+            port: 80
+          initialDelaySeconds: 15
+          periodSeconds: 20
+        volumeMounts:
+          - name: nginx-confs
+            mountPath: /etc/nginx/templates/default.conf.template
+            subPath: default.conf.template
+            readOnly: true
+          - name: nginx-confs
+            mountPath: /etc/nginx/templates/whdc.include.template
+            subPath: whdc.include.template
+          - name: whdc-nfs-app
+            mountPath: /var/www/html
+          - name: whdc-nfs-files
+            mountPath: /var/www/files

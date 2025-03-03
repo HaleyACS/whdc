@@ -1,0 +1,22 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: whdc
+---
+apiVersion: v1
+data:
+  .dockerconfigjson: eyJhdXRocyI6eyJyZXBvLnNoZHcuZnI6NTAwMCI6eyJ1c2VybmFtZSI6InByb2RhZG0iLCJwYXNzd29yZCI6IkJlbGFyYS4wODE1IiwiYXV0aCI6ImNISnZaR0ZrYlRwQ1pXeGhjbUV1TURneE5RPT0ifX19
+kind: Secret
+metadata:
+  creationTimestamp: null
+  name: docker-registry-nas
+  namespace: whdc
+type: kubernetes.io/dockerconfigjson
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: whdc-serviceaccount
+  namespace: whdc
+imagePullSecrets:
+- name: docker-registry-nas

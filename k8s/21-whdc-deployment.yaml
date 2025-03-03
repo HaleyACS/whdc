@@ -1,0 +1,65 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: whdc-app
+  namespace: whdc
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: whdc-app
+  strategy:
+    type: RollingUpdate
+  template:
+    metadata:
+      annotations:
+      creationTimestamp: null
+      labels:
+        app: whdc-app
+        identifier: app
+    spec:
+      #serviceAccountName: whdc-serviceaccount
+      containers:
+      - env:
+        - name: SERVER_NAME
+          value: "whdc"
+        - name: SERVER_ADMIN
+          value: "<ADMIN@EMAIL>"
+        name: whdc-app
+        image: <REPOSITORY>/mertin/whdc:latest
+        #imagePullPolicy: "Always"
+        ports:
+          - name: php-fpm-port
+            containerPort: 9000
+        resources:
+          limits:
+            cpu: 1
+            memory: 256Mi
+          requests:
+            cpu: 1
+            memory: 128Mi
+        volumeMounts:
+        - mountPath: /var/www/files
+          name: whdc-nfs-files
+        - mountPath: /var/www/html
+          name: whdc-nfs-app
+        readinessProbe:
+          tcpSocket:
+            port: 9000
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        livenessProbe:
+          tcpSocket:
+            port: 9000
+          initialDelaySeconds: 15
+          periodSeconds: 20
+      restartPolicy: Always
+      volumes:
+      - name: whdc-nfs-app
+        persistentVolumeClaim:
+          claimName: whdc-pvc-app
+      - name: whdc-nfs-files
+        persistentVolumeClaim:
+          claimName: whdc-pvc-files
+status: {}

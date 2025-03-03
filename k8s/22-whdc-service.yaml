@@ -1,0 +1,16 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: svc-whdc-app
+  namespace: whdc
+spec:
+  selector:
+    app: whdc-app
+  ports:
+  - name: whdc-backend-port
+    port: 9000
+    targetPort: 9000
+    protocol: TCP
+  selector:
+    app: whdc-app
