@@ -9,7 +9,7 @@ identified by the authentication token.
 The deployment happens through 2 container - application (based on php-fpm)
 and nginx frontend. Once deployed, a script enables the user to add new tokens.   
 
-The code is licensed under the GPL v2 (see ![LICENCE.md](LICENSE.md)) file joined to this repo.   
+The code is licensed under the GPL v2 (see [LICENCE.md](LICENSE.md)) file joined to this repo.   
 The reason is that it is based on weather (weather data json collector) that is GPL'd.
 
 

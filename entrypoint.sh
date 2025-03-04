@@ -12,7 +12,7 @@ do
 done
 
 tar zxf /var/www/html/websocket-php.tar.gz -C /var/www/html
-rm -f //var/www/html/websocket-php.tar.gz
+rm -f /var/www/html/websocket-php.tar.gz
 mv -f /tmp/auth.inc /var/www/files/auth.inc
 mv -f /tmp/LICENSE.md /var/www/files/LICENSE.md
 echo -n "auth.inc LICENSE.md"
