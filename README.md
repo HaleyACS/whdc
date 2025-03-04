@@ -56,8 +56,9 @@ For the system to work correctly, 2 variables are mandatory in in the json submi
 - "Alarm Status": Usually it has the subject in it.
 - "Alarm Name": Current status of the event.
 
-These will be used to build the title on whdclist.php 
-Example json submission in the DX OI Webhook Notification UI settings:
+These will be used to build the title on whdclist.php.
+
+Example json submission in the DX OI Webhook Notification UI settings:   
 ```
 {
  "Action Status": "${action_status}",
@@ -88,28 +89,10 @@ For submiting to the image to the repo, update the REPO variable in the build.sh
 
 ### Kubernets deployment
 
-Check the 21-whdc-deployment.yaml and 26-nginx-ingress.yaml files.
 
 The 21-whdc-deployment.yaml file needs to be adapted to reflect the korrect Image version pushed
 to the repository by the build script.
 
-#### 
-The Admin access for the whdctokens.php page needs a password, in form of a kubernets secret.
-Create the password hash with:
-```
-echo -n "SecretPWD" | sha256sum
-1fd80187c225ef59aede41ac3916f462b81333db5793a468609650f9198af5f4
-```
-Create with that the actual kubernets secret:
-```
-kubectl create secret generic admin-access --from-literal=username=admin --from-literal=password='1fd80187c225ef59aede41ac3916f462b81333db5793a468609650f9198af5f4' -n whdc
-```
-Remember that password, as it is written nowhere! We just use the hash256sum!
-
-
-#### Nginx/Access:
-The 26-nginx-ingress.yaml will need to be updated with the public FQDN you host this application on.
-In public, the WbHook sender needs to be able to resolve the FQDN. And, if the WebHook sender cannot
-ignore self signed certificates, make sure a certificate is available matching the FQDN!
+Check the [README.md](k8s/README.md) in the k8s directory for directions.
 
 
