@@ -1,7 +1,10 @@
 <?php
 
-$DEBUG = false;
-$INFO = true; // writes json + headers into log info log file.
+// In both cases below - mnake sure you have enouth space on disk! Logs cat grow fast
+$DEBUG = false; // Setting to true, the script will dump all kind of info to the screen.
+$INFO = false; // writes json + headers into log info log file.
+
+// Var declaration
 $result = "";
 
 // Get date.
@@ -10,16 +13,18 @@ $date =  date("Y-m-d H:i:s");
 // DB File
 $sqdb_file = '/var/www/files/whdc_database.db';
 
-// Load the token file.
+// Load the token file holding the secret used to create tokens.
+// This file is created at deployment.
 include_once('/var/www/files/tokens.inc');
 
-// tokens file.
+// Authentication code used by all php scripts.
 include_once('/var/www/files/auth.inc');
 
 
 // Create handle for log file.
 $handle = fopen("/var/www/logs/whdc.log", "a");
-// Create handle for log file.
+
+// Create handle for info-log file.
 $info = fopen("/var/www/logs/whdc-info.log", "a");
 
 if ($DEBUG == true) {
@@ -41,11 +46,13 @@ if ((isset($headers['Authorization'])) && (strlen($headers['Authorization']) > 0
         $token = trim(substr($headers['Authorization'], 6));
         $DEBUG && print "Baerer TOKEN: \n\"$token\" \n";
     } else {
+        // else go without
         $token = trim($headers['Authorization']);
         $DEBUG && print "TOKEN: \n\"$token\" \n";
     }
 
 } else {
+    // Reject - because no authorization header provided.
     header( "HTTP/1.1 401 Unauthorized" );
     echo json_encode(["error" => "Authorization headers missing"]);
     exit;
@@ -66,7 +73,7 @@ $DEBUG && print "$query \n";
 
 $result = $database->query($query);
 $row = $result->fetchArray(SQLITE3_ASSOC);
-/*
+/* Used for deep troubleshooting only.
   if ($database->LastErrorCode()) {
   fwrite($handle, "$date - ERROR: " . $database->LastErrorMsg() . "\n");
   fwrite($handle, "$date - SQL: $query \n");
@@ -75,7 +82,7 @@ $row = $result->fetchArray(SQLITE3_ASSOC);
   fwrite($handle, "$date - RESULT: " . print_r($headers, true) . " \n");
   }
 */
-// Print it out.
+// Print it out in debug mode.
 $DEBUG && print_r($row);
 
 // Check if we have a match.
@@ -88,7 +95,7 @@ if ((isset($row['token'])) && (strlen($row['token'])) > 40) {
     $is_token_valid = FALSE;
 }
 
-
+// Check if we have a registered/valid token
 if ($is_token_valid === TRUE) {
     $DEBUG && print "Found token in access list \n";
     // Extract Token key name, which is supposed to be a name of the wahtever app/DX OI system.
@@ -103,19 +110,23 @@ if ($is_token_valid === TRUE) {
     exit;
 }
 
-// Insert a test-stream into the whdc table
+// Extract remote IP adress of sender
 $remip = $_SERVER['REMOTE_ADDR'];
+
 // Get remote IP (Public one) - I using a proxy, try using this.
 // $remip = $_SERVER['HTTP_X_FORWARDED_FOR'];
 
 // ===== Actual Code ===========================================================
 
+// make sure we can read the json code.
 $json = file_get_contents('php://input');
 
 if (strlen($json) < 1) {
+    // Handle exception where user has not provided the Alarm name
     $subject = "No data provided";
     $encoded_payload = "{ \"Alarm Name\": \"$subject\"}";
 } else {
+    // Extract json and compute title if possible
     $decoded = json_decode($json, true);
     $encoded_payload = base64_encode($json);
     if (isset($decoded['Alarm Name'])) {
@@ -137,14 +148,21 @@ $logs_base64 = logs_catcher("encode", $decoded);
 
 // Get date.
 $date =  date("Y-m-d H:i:s");
+
+// Compute SQL code to insert data into sqlite DB.
 $result_sql = "INSERT INTO whdc (subject, token, rem_address, json_base64, logs_base64, date) VALUES ('{$subject}','{$token_name}','{$remip}','{$encoded_payload}','$logs_base64','{$date}')";
 $DEBUG && print "printing SQL insert: \n";
 $DEBUG &&  print "$result_sql \n";
+
+// Perform the insert
 $database->exec($result_sql);
+
+// Write into log file.
 $line =  "Remote IP: {$remip}, Subject: {$subject}";
 fwrite($handle, "$date - $line \n");
 $DEBUG && fwrite($handle, "$date - Dataset inserted \n");
 
+// Write detail into INFO file
 if ($INFO) {
     fwrite($info, "$date - $line \n");
     $jsonline = print_r($decoded, true);
@@ -155,7 +173,7 @@ if ($INFO) {
 }
 
 
-// Clean up DB
+// Clean up DB - we only want 25 entries max.
 // Identify from which entry we want to remove stuff.
 $count = "SELECT id FROM whdc WHERE token='{$token_name}' ORDER BY ID DESC LIMIT 1 OFFSET 24;";
 $DEBUG && fwrite($handle, "$date - SQL Count: $count \n");
