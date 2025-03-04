@@ -91,22 +91,3 @@ to the repository by the build script.
 
 Check the [README.md](k8s/README.md) in the k8s directory for directions.
 
-#### 
-The Admin access for the whdctokens.php page needs a password, in form of a kubernets secret.
-Create the password hash with:
-```
-echo -n "SecretPWD" | sha256sum
-1fd80187c225ef59aede41ac3916f462b81333db5793a468609650f9198af5f4
-```
-Create with that the actual kubernets secret:
-```
-kubectl create secret generic admin-access --from-literal=username=admin --from-literal=password='1fd80187c225ef59aede41ac3916f462b81333db5793a468609650f9198af5f4' -n whdc
-```
-**Remember** that password, as it is written nowhere! We just use the hash256sum!
-
-
-#### Nginx/Access:
-The 26-nginx-ingress.yaml will need to be updated with the public FQDN you host this application on.
-In public, the WbHook sender needs to be able to resolve the FQDN. And, if the WebHook sender cannot
-ignore self signed certificates, make sure a certificate is available matching the FQDN!
-
