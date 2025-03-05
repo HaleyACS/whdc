@@ -1,5 +1,6 @@
+
 FROM php:8.4-fpm-alpine
-MAINTAINER Joerg Mertin <jorg.mertin@shdw.fr>
+MAINTAINER Jorg Mertin <github_jm@solsys.org>
 
 RUN passwd -l root && apk update --no-cache && apk --no-cache add supervisor bash sqlite \
 php84-sqlite3 php84-gd php84-exif php84-gettext php84-pecl-igbinary  php84-pcntl php84-shmop \

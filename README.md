@@ -1,4 +1,4 @@
-# whdc 1.0-18 by J. Mertin -- smurphy@solsys.org
+# whdc 1.0-18 by J. Mertin -- github_jm@solsys.org
 Purpose: Web Hook data collector
 
 # Description
