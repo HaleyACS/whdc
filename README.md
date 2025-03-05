@@ -28,12 +28,14 @@ The following points need to be taken into account.
 
 ### security
 
-There is none ... This prototype is to be deployed for the testing phase, and removed after!
+There is basic security only ... This prototype is to be deployed for the testing phase, and removed after!
 
-- The access control is handled through tokens match only.
-- The tokens.inc file is found in the files directory. It will take a binary array entry to define a valid entry: Name => Token
-- The token validity is not checked. It's sole purpose is to differentiate the submitters!
-
+- The admin UI can be accessed through basic authentication only. See the [README.md](k8s/README.md) file for details on how to create the secret login/PWD combination.
+- The access control is handled through tokens. Tokens are validated.
+- The tokens.inc file is found in the files directory on the
+  server. It is created at deployment, a secret variable added which
+  will be used to create the tokens. Loosing this token will
+  invalidate all create tokens.
 
 ### Current status
 
@@ -43,13 +45,12 @@ There is none ... This prototype is to be deployed for the testing phase, and re
 
 Usage instructions are provided in the linked local PDF File: [Usage_instructions.pdf](Usage_instructions.pdf)   
 
-
 ### Usage
 
 1. Create a token in the https://whdc.shdw.fr/whdctokens.php UI.
 2. Configure the Webhook Notification channel using that token in the DX O2 settings menue.
 3. Check the submitted token (note you need the token) under https://whdc.shdw.fr/whdclist.php
-Youu have to reload the whdclist manually. Eventually a auto-reload can be addded, but it is not required.
+You have to reload the whdclist manually. Eventually a auto-reload can be addded, but it is not required.
 
 
 ### Technical
