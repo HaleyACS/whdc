@@ -197,21 +197,26 @@ if ((isset($_POST['submit'])) && ("{$_POST['submit']}" == "Save")) {
     $header = array("alg" => "HS256",
                     "typ" => "JWT");
 
-    // 
+    // set token expiration time to 1 year.
     $expiration = (time() + (60*60*24*365));
+    // token metadata
     $payload = array("name" => "{$name['valid']}",
                      "email" => "{$mail['valid']}",
                      "admin" => "false",
                      "exp" => "{$expiration}");
 
+    // create header + payload
     $header_json = json_encode($header);
     $payload_json = json_encode($payload);
+    // Create actual token - no need to encode as it is 7bit ascii.
     $jwt_token = generate_jwt($header, $payload, $secret);
-    
+
+    // prepare SQL statement.
     $query = "INSERT INTO whdc_tokens (name, token, email, date) VALUES ('{$name['valid']}', '{$jwt_token}', '{$mail['valid']}', '{$date}')";
     $DEBUG && print "$query \n";
 
-    //    $submit = false;
+    // If submit is set - execute query
+    // $submit = false;
     if ($submit) {
         $result = $database->query($query);
         if ($database->LastErrorCode()) {
@@ -227,7 +232,6 @@ if ((isset($_POST['submit'])) && ("{$_POST['submit']}" == "Save")) {
         }
     }
 }
-
 
 $query = "SELECT * FROM whdc_tokens ORDER BY date DESC";
 $result = $database->query($query);
