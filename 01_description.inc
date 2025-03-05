@@ -37,6 +37,9 @@ There is none ... This prototype is to be deployed for the testing phase, and re
 - You can see the submitted events here: https://whdc.shdw.fr/whdclist.php
 - You submit to: https://whdc.shdw.fr/whdc.php - a example test_access.sh script is provided to test the setup.
 
+Usage instructions are provided in the linked local PDF File: [Usage_instructions.pdf](Usage_instructions.pdf)   
+
+
 ### Usage
 
 1. Create a token in the https://whdc.shdw.fr/whdctokens.php UI.
