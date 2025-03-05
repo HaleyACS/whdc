@@ -1,10 +1,12 @@
 <?php
 
-/* JWT functions
- */
+/* JWT functions */
 
-// Taken from https://roytuts.com/how-to-generate-and-validate-jwt-using-php-without-using-third-party-api/
+// Code written using https://roytuts.com/how-to-generate-and-validate-jwt-using-php-without-using-third-party-api/
+// as template.
 
+
+// Create the JWT token providing headers, payload and secret.
 function generate_jwt($headers, $payload, $secret = 'secret') {
 	$headers_encoded = base64url_encode(json_encode($headers));
 	
@@ -16,15 +18,17 @@ function generate_jwt($headers, $payload, $secret = 'secret') {
 	$jwt = "$headers_encoded.$payload_encoded.$signature_encoded";
 	
 	return $jwt;
+    
 } //  generate_jwt
 
 
+// Encode string + clean-up in the process.
 function base64url_encode($str) {
     return rtrim(strtr(base64_encode($str), '+/', '-_'), '=');
 } // base64url_encode
 
 
-// Validate token
+// Token validation function
 function is_jwt_valid($jwt, $secret = 'secret') {
 	// split the jwt
 	$tokenParts = explode('.', $jwt);
@@ -50,7 +54,7 @@ function is_jwt_valid($jwt, $secret = 'secret') {
 	} else {
 		return TRUE;
 	}
-}
+} // is_jwt_valid
 
 
 ?>
