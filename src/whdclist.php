@@ -1,7 +1,6 @@
 <?php
 
-/* WHDC webhook lister
- */
+/* WHDC webhook lister */
 
 $DEBUG = false;
 $result = "";
@@ -23,8 +22,7 @@ include_once('/var/www/files/auth.inc');
 // Create handle for log file.
 $handle = fopen("/var/www/logs/whdc.log", "a");
 
-
-
+// Html header/start
 $content = "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Transitional//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\">\n
 <html xmlns=\"http://www.w3.org/1999/xhtml\" xml:lang=\"en\" lang=\"en\">
 ";
@@ -53,7 +51,7 @@ if ((isset($_GET['Authorization'])) && (strlen($_GET['Authorization']) > 0)) {
 } else {
         header( "HTTP/1.1 401 Unauthorized" );
         // echo json_encode(["error" => "Authorization headers missing"]);
-            $content .= "<table>
+        $content .= "<table>
 <tr class=\"h\">
 <th>
 <img src=\"webhook-logo.svg\" alt=\"WebHook Data Collector\" height=\"64\" width=\"64\">
@@ -80,6 +78,7 @@ Unauthenticated: Please submit the token identifier provided to your Webhook sou
 // ==================================================================================================
 // Opening sqlite DB
 $database = new SQLite3("$sqdb_file", SQLITE3_OPEN_CREATE | SQLITE3_OPEN_READWRITE);
+
 // Errors are emitted as warnings by default, enable proper error handling.
 $database->enableExceptions(true);
 $database->exec('PRAGMA journal_mode = wal;');
@@ -90,9 +89,9 @@ $query = "SELECT * FROM whdc_tokens WHERE token='{$token}' ORDER BY date DESC";
 $result = $database->query($query);
 $row = $result->fetchArray(SQLITE3_ASSOC);
 /* Bug in sqlite that causes it to always write an error out.
-if ($database->LastErrorCode()) {
-    fwrite($handle, "$date - SELECT ERROR: " . $database->LastErrorMsg() . "\n");
-}
+   if ($database->LastErrorCode()) {
+   fwrite($handle, "$date - SELECT ERROR: " . $database->LastErrorMsg() . "\n");
+   }
 */
 if ((isset($row['token'])) && (strlen($row['token'])) > 40) {
     
@@ -143,7 +142,7 @@ Welcome
 
 // Database structure as below
 /*
-    $query = "CREATE TABLE IF NOT EXISTS whdc (
+  $query = "CREATE TABLE IF NOT EXISTS whdc (
        id INTEGER PRIMARY KEY AUTOINCREMENT,
        token VARCHAR NOT NULL,
        subject VARCHAR NOT NULL,
@@ -163,6 +162,7 @@ if ($database->LastErrorCode()) {
 
 $count = 1;
 while ($row = $result->fetchArray(SQLITE3_ASSOC)) {
+    // Handy for troubleshooting
     //$line =  "ID: {$row['id']}, Remote IP: {$row['rem_address']}, Subject: {$row['subject']}, Date: {$row['date']}<br>";
     //fwrite($handle, "$date - $line \n");
     $DEBUG && print_r ($row);
@@ -179,6 +179,7 @@ while ($row = $result->fetchArray(SQLITE3_ASSOC)) {
             $status = "Unknown";
         }
     }
+    
     $logs_id = $row['id'] . "_logs";
     $log_link = "<A href=\"javascript:hideshow(document.getElementById('{$logs_id}'))\">Headers</A>";
     $logs =base64_decode($row['logs_base64']);
@@ -189,11 +190,12 @@ while ($row = $result->fetchArray(SQLITE3_ASSOC)) {
     $content .= "<tr><td class=\"e\">Recording Date GMT</td><td class=\"v\"> {$row['date']}   </td></tr>";
     $content .= "<tr><td class=\"e\">Sender </td><td class=\"v\"> {$row['token']} from {$row['rem_address']}</td></tr>";
     $fixed_text = json_encode($fixed_tmp, JSON_PRETTY_PRINT);
-
+    
     $content .= "<tr><td class=\"v\" colspan=\"2\"><pre>$fixed_text</pre></td></tr>";
     $content .= "<tr><td class=\"v\" colspan=\"2\"> => Troubleshooting: {$log_link} <br /></td></tr>";
     $content .= "</table>";
     $count++;
+
 } // While loop
 
 if ($count == 1) {
@@ -201,7 +203,6 @@ if ($count == 1) {
     $content .= "<tr class=\"h\"><td>No requests for this Token have been recorded!</td></tr>";
     $content .= "</table>";
 }
-
 
 // ==================================================================================================
 $content .= "</div></body>\n</html>";
