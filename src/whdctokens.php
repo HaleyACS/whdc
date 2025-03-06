@@ -243,12 +243,20 @@ if ((isset($_POST['submit'])) && ("{$_POST['submit']}" == "Save")) {
             print "$content";              
             exit;
         }
+        fwrite($handle, "$date - SQL Added entry: {$name['valid']} / {$mail['valid']} \n");
+        $status = "<table>";
+        $status .= "<tr class=\"v\">";
+        $status .= "<td align=\"left\"> *** Added entry {$name['valid']} / {$mail['valid']}</td>";
+        $status .= "<tr>";
+        $status .= "</table>";
+        $status .= "<meta http-equiv=\"refresh\" content=\"3; url=https://{$_SERVER['HTTP_HOST']}/whdctokens.php\" />";
     }
 }
 
 // Processing deletion
 if ((isset($_GET['delete'])) && ("{$_GET['delete']}" == "Yes")) {
 
+    $date =  date("Y-m-d H:i:s");
     // we need the ID to delete
     if ((isset($_GET['deleteid'])) && (is_numeric($_GET['deleteid']))) {
         // Get data-string first
@@ -257,9 +265,10 @@ if ((isset($_GET['delete'])) && ("{$_GET['delete']}" == "Yes")) {
         $delrow = $result->fetchArray(SQLITE3_ASSOC);
 
         $delete_token = "DELETE FROM whdc_tokens WHERE id='{$delrow['id']}';";
-        $DEBUG && fwrite($handle, "$date - SQL delete: $delete_token \n");
+        fwrite($handle, "$date - SQL token delete: $delete_token \n");
         $database->exec($delete_token);
         $delete_data = "DELETE FROM whdc WHERE token='{$delrow['name']}';";
+        fwrite($handle, "$date - SQL data delete: $delete_data \n");
         $database->exec($delete_data);
         $status = "<table>";
         $status .= "<tr class=\"v\">";
