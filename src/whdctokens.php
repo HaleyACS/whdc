@@ -242,12 +242,13 @@ if ($database->LastErrorCode()) {
 
 $content .= "<table>";
 $content .= "<tr class=\"h\">";
-$content .= "<th colspan=\"4\">Registered tenant listing</th>";
+$content .= "<th colspan=\"5\">Registered tenant listing</th>";
 $content .= "<tr>";
 $content .= "<tr class=\"e\">";
 $content .= "<th>Date</th>";
 $content .= "<th>WebHook source identifier</th>";
 $content .= "<th>Owner E-Mail</th>";
+$content .= "<th>Collected # entries</th>";
 $content .= "<th>Webhook Token</th>";
 $content .= "</tr>";
 
@@ -257,15 +258,16 @@ while ($row = $result->fetchArray(SQLITE3_ASSOC)) {
     $token = "<textarea name=\"Token\" cols=\"40\" rows=\"5\">{$row['token']}</textarea>";
     $row_id = "row_{$row['id']}";
     $token_link = "<A href=\"javascript:hideshow(document.getElementById('{$row_id}'))\">Show Token</A>";
-    $token_link .= "<div id='{$row_id}' style=\"white-space; pre-wrap; display: none\" align=\"left\" >$token</div>";
+    $token_link .= "<div id='{$row_id}' style=\"white-space; pre-wrap; display: none\" align=\"left\" >$token</div><br /> => Target: https://{$_SERVER['HTTP_HOST']}/whdc.php";
     $cnt_entries = "SELECT count(id) as count FROM whdc WHERE token='{$row['name']}'";
     $entries = $database->querySingle($cnt_entries);
     
     $content .= "<tr class=\"h\">";
-    $content .= "<td class=\"v\">{$row['date']}</td>";
-    $content .= "<td class=\"v\"> {$row['name']}</td>";
-    $content .= "<td class=\"v\"> {$row['email']}</td>";
-    $content .= "<td class=\"v\" width=\"360\"> => $token_link (# $entries rows)</td>";
+    $content .= "<td class=\"v\"> {$row['date']} </td>";
+    $content .= "<td class=\"v\"> {$row['name']} </td>";
+    $content .= "<td class=\"v\"> {$row['email']} </td>";
+    $content .= "<td class=\"v\"> <A href=\"https://{$_SERVER['HTTP_HOST']}/whdclist.php?Authorization={$row['token']}\" target=\"{$row['name']}\">View $entries rows</A></td>";
+    $content .= "<td class=\"v\" width=\"360\"> => $token_link </td>";
     $content .= "</tr>";
 } // While loop through tokens
 
