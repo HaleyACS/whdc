@@ -6,6 +6,7 @@
 $DEBUG = false;
 $result = "";
 $content = "";
+$status = "";
 
 // DB File
 $sqdb_file = '/var/www/files/whdc_database.db';
@@ -170,7 +171,8 @@ $content .= "</FORM>";
 $mail = array();
 $name = array();
 $submit = true;
-// We have a new entry to process
+
+// Processing submit
 if ((isset($_POST['submit'])) && ("{$_POST['submit']}" == "Save")) {
     // Get date.
     $date =  date("Y-m-d H:i:s");
@@ -243,6 +245,32 @@ if ((isset($_POST['submit'])) && ("{$_POST['submit']}" == "Save")) {
     }
 }
 
+// Processing deletion
+if ((isset($_GET['delete'])) && ("{$_GET['delete']}" == "Yes")) {
+
+    // we need the ID to delete
+    if ((isset($_GET['deleteid'])) && (is_numeric($_GET['deleteid']))) {
+        // Get data-string first
+        $delquery = "SELECT * FROM whdc_tokens WHERE id={$_GET['deleteid']};";
+        $result = $database->query($delquery);
+        $delrow = $result->fetchArray(SQLITE3_ASSOC);
+
+        $delete_token = "DELETE FROM whdc_tokens WHERE id='{$delrow['id']}';";
+        $DEBUG && fwrite($handle, "$date - SQL delete: $delete_token \n");
+        $database->exec($delete_token);
+        $delete_data = "DELETE FROM whdc WHERE token='{$delrow['name']}';";
+        $database->exec($delete_data);
+        $status = "<table>";
+        $status .= "<tr class=\"v\">";
+        $status .= "<td align=\"left\"> *** Deleted entry {$delrow['name']} + data </td>";
+        $status .= "<tr>";
+        $status .= "</table>";
+        $status .= "<meta http-equiv=\"refresh\" content=\"3; url=https://{$_SERVER['HTTP_HOST']}/whdctokens.php\" />";
+    }
+}
+
+
+
 $query = "SELECT * FROM whdc_tokens ORDER BY date DESC";
 $result = $database->query($query);
 
@@ -271,10 +299,10 @@ while ($row = $result->fetchArray(SQLITE3_ASSOC)) {
     $token_link .= "<div id='{$row_id}' style=\"white-space; pre-wrap; display: none\" align=\"left\" >$token</div>";
     $cnt_entries = "SELECT count(id) as count FROM whdc WHERE token='{$row['name']}'";
     $entries = $database->querySingle($cnt_entries);
-    
+    $delurl = "(<A href=\"https://{$_SERVER['HTTP_HOST']}/whdctokens.php?delete=Yes&deleteid={$row['id']}\">del</A>)";
     $content .= "<tr class=\"h\">";
     $content .= "<td class=\"v\"> {$row['date']} </td>";
-    $content .= "<td class=\"v\"> {$row['name']} </td>";
+    $content .= "<td class=\"v\"> {$row['name']} $delurl</td>";
     $content .= "<td class=\"v\"> {$row['email']} </td>";
     $content .= "<td class=\"v\"> <A href=\"https://{$_SERVER['HTTP_HOST']}/whdclist.php?Authorization={$row['token']}\" target=\"{$row['name']}\">View $entries rows</A></td>";
     $content .= "<td class=\"v\" width=\"360\"> => $token_link </td>";
@@ -282,7 +310,7 @@ while ($row = $result->fetchArray(SQLITE3_ASSOC)) {
 } // While loop through tokens
 
 $content .= "</table>";
-
+$content .= $status;
 
 // ==================================================================================================
 $content .= "</div></body>\n</html>";
