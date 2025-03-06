@@ -141,6 +141,16 @@ $content .= "<table>
 </table>
 ";
 
+$instructions = "1. Create a new token entry. Provide the identifier (tenant name + extra tag) and E-Mail of submitter (Used to identify the submitter)<br />";
+$instructions .= "2. Go on the just created entry line, open the  \"Show token\" box and copy the token<br />";
+$instructions .= "3. In DX O2 Notification channel configuration, select \"Token authentication\" as Authentication Type, and paste this token in the Token field.<br />&nbsp; &nbsp; As \"Webhook (generic) URL\", use: <b><kbd>https://{$_SERVER['HTTP_HOST']}/whdc.php</kbd></b> <br />";
+$instructions .= "4. Select \"View # rows\" link on the just created tenant line and see the content of the test request.<br />";
+
+$row_id = "Instructions_1";
+$help_link = "<b><A href=\"javascript:hideshow(document.getElementById('Instructions_1'))\">Instructions</A></b>";
+$help_link .= "<div id='{$row_id}' style=\"white-space; pre-wrap; display: none\" align=\"left\" >$instructions</div><br />";
+
+$content .= "<table><tr><td>" .  $help_link . "</td></tr></table>";
 $content .= "<FORM action=\"whdctokens.php\" method=\"post\" \>\n";
 $content .= "<table>";
 $content .= "<tr class=\"e\">";
@@ -258,7 +268,7 @@ while ($row = $result->fetchArray(SQLITE3_ASSOC)) {
     $token = "<textarea name=\"Token\" cols=\"40\" rows=\"5\">{$row['token']}</textarea>";
     $row_id = "row_{$row['id']}";
     $token_link = "<A href=\"javascript:hideshow(document.getElementById('{$row_id}'))\">Show Token</A>";
-    $token_link .= "<div id='{$row_id}' style=\"white-space; pre-wrap; display: none\" align=\"left\" >$token</div><br /> => Target: https://{$_SERVER['HTTP_HOST']}/whdc.php";
+    $token_link .= "<div id='{$row_id}' style=\"white-space; pre-wrap; display: none\" align=\"left\" >$token</div>";
     $cnt_entries = "SELECT count(id) as count FROM whdc WHERE token='{$row['name']}'";
     $entries = $database->querySingle($cnt_entries);
     
