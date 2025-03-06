@@ -146,6 +146,7 @@ $instructions = "1. Create a new token entry. Provide the identifier (tenant nam
 $instructions .= "2. Go on the just created entry line, open the  \"Show token\" box and copy the token<br />";
 $instructions .= "3. In DX O2 Notification channel configuration, select \"Token authentication\" as Authentication Type, and paste this token in the Token field.<br />&nbsp; &nbsp; As \"Webhook (generic) URL\", use: <b><kbd>https://{$_SERVER['HTTP_HOST']}/whdc.php</kbd></b> <br />";
 $instructions .= "4. Select \"View # rows\" link on the just created tenant line and see the content of the test request.<br />";
+$instructions .= "<br /><b>WARNING</b>: Deleting an entry is straigh ahead. No warning, no questions asked!";
 
 $row_id = "Instructions_1";
 $help_link = "<b><A href=\"javascript:hideshow(document.getElementById('Instructions_1'))\">Instructions</A></b>";
