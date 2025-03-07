@@ -27,6 +27,12 @@ $handle = fopen("/var/www/logs/whdc.log", "a");
 // Create handle for info-log file.
 $info = fopen("/var/www/logs/whdc-info.log", "a");
 
+// Extract remote IP adress of sender
+$remip = $_SERVER['REMOTE_ADDR'];
+
+// Get remote IP (Public one) - I using a proxy, try using this.
+// $remip = $_SERVER['HTTP_X_FORWARDED_FOR'];
+
 if ($DEBUG == true) {
     $result = "$date whdc submission - POST array below: \n";
     $result .= "======================================================================\n";
@@ -97,11 +103,11 @@ if ((isset($row['token'])) && (strlen($row['token'])) > 40) {
 
 // Check if we have a registered/valid token
 if ($is_token_valid === TRUE) {
-    $DEBUG && print "Found token in access list \n";
+    $DEBUG && print "$remip Found token in access list \n";
     // Extract Token key name, which is supposed to be a name of the wahtever app/DX OI system.
     $token_name = $row['name'];
 } else {
-    $line = "FATAL: Authentication error. No valid token provided. Access denied!";
+    $line = "FATAL: $remip Authentication error. No valid token provided. Access denied!";
     header( "HTTP/1.1 401 Unauthorized" );
     fwrite($handle, "$date - $line \n");
     print "$line \n";
@@ -109,12 +115,6 @@ if ($is_token_valid === TRUE) {
     fclose($handle);
     exit;
 }
-
-// Extract remote IP adress of sender
-$remip = $_SERVER['REMOTE_ADDR'];
-
-// Get remote IP (Public one) - I using a proxy, try using this.
-// $remip = $_SERVER['HTTP_X_FORWARDED_FOR'];
 
 // ===== Actual Code ===========================================================
 
