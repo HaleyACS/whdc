@@ -26,6 +26,16 @@ spec:
           value: "whdc"
         - name: SERVER_ADMIN
           value: "<ADMIN@EMAIL>"
+        - name: USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: admin-access
+              key: username
+        - name: PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: admin-access
+              key: password
         name: whdc-app
         image: <REPOSITORY>/mertin/whdc:latest
         #imagePullPolicy: "Always"
