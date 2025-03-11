@@ -1,15 +1,19 @@
 <?php
 
-/* WADC webhook lister
+/* ====================================================
+ * WHDC WebHook Data Collector administration Interface
  */
 
 $DEBUG = false;
 $result = "";
 $content = "";
 $status = "";
-
-// DB File
-$sqdb_file = '/var/www/files/whdc_database.db';
+$message = "Unknown";
+$error = array();
+$error['query'] = "";
+$error['del'] = "";
+$error['mail'] = "";
+$error['name'] = "";
 
 // tokens file.
 include_once('/var/www/files/tokens.inc');
@@ -20,65 +24,20 @@ include_once('/var/www/files/auth.inc');
 // Create handle for log file.
 $handle = fopen("/var/www/logs/whdc.log", "a");
 
-if (file_exists($sqdb_file)) {
-    $create_tables = false;
-} else {
-    $create_tables = true;
-}
-
 // Grab that out of the env.
 $username = getenv('USERNAME');
-$password = getenv('PASSWORD');
+$known_pwd_hash = hash('sha256', getenv('PASSWORD'));
+$date =  date("Y-m-d H:i:s");
 
-//================  Database - if it does not exists, create it =======================
-$database = new SQLite3("$sqdb_file", SQLITE3_OPEN_CREATE | SQLITE3_OPEN_READWRITE);
-// Errors are emitted as warnings by default, enable proper error handling.
-$database->enableExceptions(true);
-$database->exec('PRAGMA journal_mode = wal;');
-$database->exec("PRAGMA busy_timeout=5000");
-
-if ($create_tables) {
-
-    $query = "CREATE TABLE IF NOT EXISTS whdc_tokens (
-       id INTEGER PRIMARY KEY AUTOINCREMENT,
-       name varchar NOT NULL,
-       token VARCHAR NOT NULL,
-       email VARCHAR NOT NULL,
-       date DATETIME NOT NULL,
-       UNIQUE(name,email)
-    )";
-    $database->exec($query);
-    if ($database->LastErrorCode()) {
-        fwrite($handle, "$date - ERROR: " . $database->LastErrorMsg() . "\n");
-        exit;
-    }
-
-    $query = "CREATE TABLE IF NOT EXISTS whdc (
-       id INTEGER PRIMARY KEY AUTOINCREMENT,
-       token VARCHAR NOT NULL,
-       subject VARCHAR NOT NULL,
-       rem_address VARCHAR NOT NULL,
-       json_base64 TEXT NOT NULL,
-       logs_base64 TEXT NOT NULL,
-       date DATETIME NOT NULL
-    )";
-    $database->exec($query);
-    if ($database->LastErrorCode()) {
-        fwrite($handle, "$date - ERROR: " . $database->LastErrorMsg() . "\n");
-        exit;
-    }
-
-} // If Database file exists.
-
-$content = "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Transitional//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\">\n
-<html xmlns=\"http://www.w3.org/1999/xhtml\" xml:lang=\"en\" lang=\"en\">
+$content = "<!DOCTYPE html>
 ";
-// Body start
-$content .= "<body><div class=\"center\">";
 
 // head
 $content = "
+<html xml:lang=\"en\" lang=\"en\">
+<body><div class=\"center\">
 <head>
+<meta charset=\"UTF-8\" />
 <title>WHDC - Generic Webhook Collector Manager</title>
 <link rel=\"stylesheet\" href=\"style.css\" type=\"text/css\" />
 <SCRIPT LANGUAGE=\"JavaScript\" TYPE=\"text/javascript\" SRC=\"showhide.js\"></SCRIPT>
@@ -91,37 +50,60 @@ if (!isset($_SERVER['PHP_AUTH_USER'])) {
     header('WWW-Authenticate: Basic realm="Webhook Collector Token Manager"');
     header('HTTP/1.0 401 Unauthorized');
     echo '<body><h1>Authentication cancelled, well, thanks for the fish... Solong!</h1></body></html>';
+    $logtext = "No username provided";
+    tolog("AUTH", $logtext, $handle);
     exit;
     
 } else {
-    /* For Debugging
-    print "<PRE>";
-    print "$password \n";
-    print hash('sha256', "{$_SERVER['PHP_AUTH_PW']}");
-    print "<PRE>";
-    exit;
-    */
-    // We compute the hash of the PWD.
-    $pwd_hash = hash('sha256', "{$_SERVER['PHP_AUTH_PW']}");
-    
-    if ((isset($_SERVER['PHP_AUTH_USER'])) && ("{$_SERVER['PHP_AUTH_USER']}" == "$username") && (isset($_SERVER['PHP_AUTH_PW'])) && ("$pwd_hash" == "$password")) {
-        $message = ucfirst($username);
+
+    // Set value to fakse.
+    $auth_check = false;
+    if ((isset($_SERVER['PHP_AUTH_USER'])) && ($_SERVER['PHP_AUTH_USER'] == $username)) {
+        $auth_check = true;
+        $logtext = "Valid username";
+        $DEBUG && tolog("AUTH", $logtext, $handle);
     } else {
+        $auth_check = false;
+        $logtext = "Login name incorrect.";
+        $auth_message = "$date - $logtext";
+        $DEBUG && tolog("AUTH", $logtext, $handle);
+    }
+
+    $provided_pwd_hash = hash('sha256', $_SERVER['PHP_AUTH_PW']);
+    if ((isset($_SERVER['PHP_AUTH_PW'])) && ($provided_pwd_hash == $known_pwd_hash)) {
+        $auth_check = true;
+        $logtext = "Valid password.";
+        $DEBUG && tolog("AUTH", $logtext, $handle);
+    } else {
+        $auth_check = false;
+        $logtext = "Invalid password.";
+        $auth_message = "$date - $logtext";
+        $DEBUG && tolog("AUTH", $logtext, $handle);
+    }
+
+    if ($auth_check) {
+        $message = ucfirst($username);
+        $logtext = "Login by $message granted.";
+        $DEBUG && tolog("AUTH", $logtext, $handle);
+
+    } else {
+        // Clear global variables.
+        unset($_SERVER['PHP_AUTH_USER']);
+        unset($_SERVER['PHP_AUTH_PW']);
         header('WWW-Authenticate: Basic realm="Webhook Collector Token Manager"');
         header('HTTP/1.0 401 Unauthorized');
-        echo '<body><h1>Well, thanks for the fish... Solong!</h1></body></html>';
+        echo "<body><h1>$auth_message <br />Well, thanks for the fish... Solong!</h1></body></html>";
+        $DEBUG && tolog("AUTH", $auth_message, $handle);
+        $DEBUG && tolog("PROVIDED", $provided_pwd_hash, $handle);
+        $DEBUG && tolog("COMPARED", $known_pwd_hash, $handle);
         exit;
     }
 }
 
-
-
-$content = "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Transitional//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\">\n
-<html xmlns=\"http://www.w3.org/1999/xhtml\" xml:lang=\"en\" lang=\"en\">
-";
-
+$content = "<!DOCTYPE html>";
 // head
 $content = "
+<html xml:lang=\"en\" lang=\"en\">
 <head>
 <title>WHDC - Generic Webhook Collector Manager</title>
 <link rel=\"stylesheet\" href=\"style.css\" type=\"text/css\" />
@@ -187,7 +169,7 @@ if ((isset($_POST['submit'])) && ("{$_POST['submit']}" == "Save")) {
             $mail['valid'] = htmlentities($mail['request'], ENT_QUOTES, 'UTF-8');
         } else {
             $mail['invalid'] = htmlentities($mail['request'], ENT_QUOTES, 'UTF-8');
-            $mail['error_msg'] = htmlentities("This is not a Valid E-Mail address", ENT_QUOTES, 'UTF-8');
+            $error['mail'] = htmlentities("This is not a Valid E-Mail address", ENT_QUOTES, 'UTF-8');
             $submit = false;
         }
     }
@@ -201,7 +183,7 @@ if ((isset($_POST['submit'])) && ("{$_POST['submit']}" == "Save")) {
             $name['valid'] = htmlentities($name['request'], ENT_QUOTES, 'UTF-8');
         } else {
             $name['invalid'] = htmlentities($name['request'], ENT_QUOTES, 'UTF-8');
-            $name['error_msg'] = htmlentities("This is not a Valid Name", ENT_QUOTES, 'UTF-8');
+            $error['name'] = htmlentities("This is not a Valid Name", ENT_QUOTES, 'UTF-8');
             $submit = false;
         }
     }
@@ -225,25 +207,35 @@ if ((isset($_POST['submit'])) && ("{$_POST['submit']}" == "Save")) {
     $jwt_token = generate_jwt($header, $payload, $secret);
 
     // prepare SQL statement.
-    $query = "INSERT INTO whdc_tokens (name, token, email, date) VALUES ('{$name['valid']}', '{$jwt_token}', '{$mail['valid']}', '{$date}')";
+    $query_sql = "INSERT INTO whdc_tokens (name, token, email, date) VALUES ('{$name['valid']}', '{$jwt_token}', '{$mail['valid']}', '{$date}')";
     $DEBUG && print "$query \n";
 
+    
     // If submit is set - execute query
     // $submit = false;
     if ($submit) {
-        $result = $database->query($query);
-        if ($database->LastErrorCode()) {
-            fwrite($handle, "$date - ERROR: " . $database->LastErrorMsg() . "\n");
+        $query_result =  mysqli_query($dbWhdc, $query_sql);
+        if (mysqli_error($dbWhdc)) {
+            tolog("SQL", mysqli_error($dbWhdc), $handle);
+        }
+
+        if (strlen($error['query']) > 0) {
+            $error_message = "$date - ERROR: " . $error['query'] . "\n";
+            tolog("SQL", $error_message, $handle);
+            $status = $error_message;
             $content .= "<table>";
             $content .= "<tr>";
-            $content .= "<td class=\"v\">" . $database->LastErrorMsg() . "</td>";
+            $content .= "<td class=\"v\">" . $error_message . "</td>";
             $content .= "</tr>";
             $content .= "</table>";
             $content .= "</div></body>\n</html>";
             print "$content";              
             exit;
         }
-        fwrite($handle, "$date - SQL Added entry: {$name['valid']} / {$mail['valid']} \n");
+
+        $logmessage = "Added entry: {$name['valid']} / {$mail['valid']} \n";
+        tolog("SQL", $logmessage, $handle);
+                    
         $status = "<table>";
         $status .= "<tr class=\"v\">";
         $status .= "<td align=\"left\"> *** Added entry {$name['valid']} / {$mail['valid']}</td>";
@@ -260,32 +252,55 @@ if ((isset($_GET['delete'])) && ("{$_GET['delete']}" == "Yes")) {
     // we need the ID to delete
     if ((isset($_GET['deleteid'])) && (is_numeric($_GET['deleteid']))) {
         // Get data-string first
-        $delquery = "SELECT * FROM whdc_tokens WHERE id={$_GET['deleteid']};";
-        $result = $database->query($delquery);
-        $delrow = $result->fetchArray(SQLITE3_ASSOC);
+        $tkrow_sql = "SELECT * FROM whdc_tokens WHERE id={$_GET['deleteid']};";
+        $tkrow_query =  mysqli_query($dbWhdc, $tkrow_sql);        
+        if (mysqli_error($dbWhdc)) {
+            tolog("SQL", mysqli_error($dbWhdc), $handle);
+        }
+        $rowtodel = mysqli_fetch_assoc($tkrow_query);
 
-        $delete_token = "DELETE FROM whdc_tokens WHERE id='{$delrow['id']}';";
-        fwrite($handle, "$date - SQL token delete: $delete_token \n");
-        $database->exec($delete_token);
-        $delete_data = "DELETE FROM whdc WHERE token='{$delrow['name']}';";
-        fwrite($handle, "$date - SQL data delete: $delete_data \n");
-        $database->exec($delete_data);
+        $delete_token = "DELETE FROM whdc_tokens WHERE id='{$rowtodel['id']}';";
+        $deltoken_query =  mysqli_query($dbWhdc, $delete_token);
+        if (mysqli_error($dbWhdc)) {
+            tolog("SQL", mysqli_error($dbWhdc), $handle);
+        }
+        $logmessage = "Removed tenant-config for {$rowtodel['name']}";
+        tolog("DEL", $logmessage, $handle);
+        
+        $delete_data = "DELETE FROM whdc WHERE tenant_name='{$rowtodel['name']}';";
+        $deldata_query =  mysqli_query($dbWhdc, $delete_data);
+        if (mysqli_error($dbWhdc)) {
+            tolog("SQL", mysqli_error($dbWhdc), $handle);
+        }
+        $logmessage = "Removed tenant-data for {$rowtodel['name']}";
+        tolog("DEL", $logmessage, $handle);
+        
         $status = "<table>";
         $status .= "<tr class=\"v\">";
-        $status .= "<td align=\"left\"> *** Deleted entry {$delrow['name']} + data </td>";
+        $status .= "<td align=\"left\"> *** Deleted entry {$rowtodel['name']} + data </td>";
         $status .= "<tr>";
+        if ( strlen($error['del']) ) {
+            $status .= "<tr class=\"v\">";
+            $status .= "<td align=\"left\"> *** ERROR: Error detected <br /> <PRE>{$error['del']}</PRE> </td>";
+            $status .= "<tr>";
+        }
+
         $status .= "</table>";
         $status .= "<meta http-equiv=\"refresh\" content=\"3; url=https://{$_SERVER['HTTP_HOST']}/whdctokens.php\" />";
     }
 }
 
 
+$query_sql = "SELECT * FROM whdc_tokens ORDER BY date DESC";
+$query_result =  mysqli_query($dbWhdc, $query_sql);
+if (mysqli_error($dbWhdc)) {
+    tolog("SQL", mysqli_error($dbWhdc), $handle);
+}
 
-$query = "SELECT * FROM whdc_tokens ORDER BY date DESC";
-$result = $database->query($query);
-
-if ($database->LastErrorCode()) {
-    fwrite($handle, "$date - ERROR: " . $database->LastErrorMsg() . "\n");
+if (strlen($error['query']) > 0) {
+    $error_message = "$date - ERROR: " . $error['query'] . "\n";
+    tolog("SQL", $error_message, $handle);
+    $status = $error_message;
 }
 
 $content .= "<table>";
@@ -300,21 +315,23 @@ $content .= "<th>Collected # entries</th>";
 $content .= "<th>Webhook Token</th>";
 $content .= "</tr>";
 
-while ($row = $result->fetchArray(SQLITE3_ASSOC)) {
-    $DEBUG && print_r ($row);
+while ($row = mysqli_fetch_assoc($query_result)) {
+    // $DEBUG && print_r ($row);
 
     $token = "<textarea name=\"Token\" cols=\"40\" rows=\"5\">{$row['token']}</textarea>";
     $row_id = "row_{$row['id']}";
     $token_link = "<A href=\"javascript:hideshow(document.getElementById('{$row_id}'))\">Show Token</A>";
     $token_link .= "<div id='{$row_id}' style=\"white-space; pre-wrap; display: none\" align=\"left\" >$token</div>";
-    $cnt_entries = "SELECT count(id) as count FROM whdc WHERE token='{$row['name']}'";
-    $entries = $database->querySingle($cnt_entries);
+    
+    $cnt_entries = "SELECT count(id) as count FROM whdc WHERE tenant_name='{$row['name']}'";
+    $cnt_result = mysqli_query($dbWhdc, $cnt_entries);
+    $entries = mysqli_fetch_assoc($cnt_result);
     $delurl = "(<A href=\"https://{$_SERVER['HTTP_HOST']}/whdctokens.php?delete=Yes&deleteid={$row['id']}\">del</A>)";
     $content .= "<tr class=\"h\">";
     $content .= "<td class=\"v\"> {$row['date']} </td>";
     $content .= "<td class=\"v\"> {$row['name']} $delurl</td>";
     $content .= "<td class=\"v\"> {$row['email']} </td>";
-    $content .= "<td class=\"v\"> <A href=\"https://{$_SERVER['HTTP_HOST']}/whdclist.php?Authorization={$row['token']}\" target=\"{$row['name']}\">View $entries rows</A></td>";
+    $content .= "<td class=\"v\"> <A href=\"https://{$_SERVER['HTTP_HOST']}/whdclist.php?Authorization={$row['token']}\" target=\"{$row['name']}\">View {$entries['count']} rows</A></td>";
     $content .= "<td class=\"v\" width=\"360\"> => $token_link </td>";
     $content .= "</tr>";
 } // While loop through tokens
@@ -326,7 +343,6 @@ $content .= $status;
 $content .= "</div></body>\n</html>";
 
 // Close all
-$database->close();
 fclose($handle);
 print "$content";
 

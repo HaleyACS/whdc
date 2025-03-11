@@ -1,10 +1,33 @@
 <?php
 
+/* DB functions */
+include_once('/var/www/files/.htconf.inc'); 
+
+// Connect to system wide DB. We'll need it anyway.
+$dbWhdc = mysqli_connect(MYSQL_HOST, MYSQL_USER, MYSQL_PASSWORD, MYSQL_DATABASE);
+mysqli_set_charset($dbWhdc, "utf8");
+
+// check connection
+if (mysqli_connect_errno()) {
+    printf("DB Connection failed : %s\n", mysqli_connect_error());
+    exit();
+}
+
+/* Log handler */
+
+function tolog ($function, $text, $target) {
+    global $handle, $infolog;
+
+    $date =  date("Y-m-d H:i:s");
+    fwrite($target, "$date [$function] $text \n");
+
+} // tolog
+
+
 /* JWT functions */
 
 // Code written using https://roytuts.com/how-to-generate-and-validate-jwt-using-php-without-using-third-party-api/
 // as template.
-
 
 // Create the JWT token providing headers, payload and secret.
 function generate_jwt($headers, $payload, $secret = 'secret') {

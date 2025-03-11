@@ -5,6 +5,11 @@ with on the CLI if required.  Note that if VPC's are not wanted, the
 deployment works without, but will delete all data (including the
 access tokens) on every restart.
 
+### Create a database access secret
+```
+kubectl create secret generic whdc-db-access --from-literal=username=whdc --from-literal=password='SecretPWD' --from-literal=rootpassword='RootSecretPWD' -n whdc
+```
+
 ### Create a Secret for the Admin Access [mandatory]
 ```
 ~# kubectl create secret generic admin-access --from-literal=username=admin --from-literal=password='1fd80187c225ef59aede41ac3916f462b81333db5793a468609650f9198af5f4' -n whdc

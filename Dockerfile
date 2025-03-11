@@ -5,20 +5,27 @@ MAINTAINER Jorg Mertin <github_jm@solsys.org>
 RUN passwd -l root && apk update --no-cache && apk --no-cache add supervisor bash sqlite \
 php84-sqlite3 php84-gd php84-exif php84-gettext php84-pecl-igbinary  php84-pcntl php84-shmop \
 php84-sockets php84-sysvmsg php84-sysvsem php84-sysvshm php84-pecl-xlswriter php84-zip php84-opcache \
-nano bash mysql-client libxslt zstd-libs libzip libintl gettext-libs libgd icu-libs lz4-libs tcpdump
+nano bash mariadb-client libxslt zstd-libs libzip libintl gettext-libs libgd icu-libs lz4-libs tcpdump
+
+RUN docker-php-ext-configure mysqli  \
+    && docker-php-ext-install -j$(nproc) mysqli \
+    && docker-php-source delete
 
 ADD entrypoint.sh /
+ADD install_mysqldb.sh /tmp
+ADD whdc.sql /tmp
 
 RUN  mkdir -p /var/www/logs /var/www/html/site && \
     chown -R root:www-data /var/www/html/site /var/www/logs && \
     chmod 775 /var/www/logs  && \
     mv -f /usr/local/etc/php/php.ini-development /usr/local/etc/php/php.ini && \
-    chmod 755 /entrypoint.sh /var/www/html/site && \
+    chmod 755 /entrypoint.sh /tmp/install_mysqldb.sh /var/www/html/site && \
     touch /var/www/logs/error.log /var/www/logs/access.log && \
     chown www-data:www-data /var/www/logs/error.log /var/www/logs/access.log
 
 ADD src/style.css /tmp/
 ADD LICENSE.md /tmp/
+ADD release.txt /tmp/
 ADD src/showhide.js /tmp/
 ADD src/whdclist.php /tmp/
 ADD src/whdctokens.php /tmp/

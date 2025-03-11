@@ -5,12 +5,10 @@
 $DEBUG = false;
 $result = "";
 $content = "";
+$error = array();
 
 // Get date.
 $date =  date("Y-m-d H:i:s");
-
-// DB File
-$sqdb_file = '/var/www/files/whdc_database.db';
 
 // Load the token file.
 include_once('/var/www/files/tokens.inc');
@@ -23,8 +21,8 @@ include_once('/var/www/files/auth.inc');
 $handle = fopen("/var/www/logs/whdc.log", "a");
 
 // Html header/start
-$content = "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Transitional//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\">\n
-<html xmlns=\"http://www.w3.org/1999/xhtml\" xml:lang=\"en\" lang=\"en\">
+$content = "<!DOCTYPE html>\n
+<html xml:lang=\"en\" lang=\"en\">
 ";
 
 // head
@@ -76,23 +74,15 @@ Unauthenticated: Please submit the token identifier provided to your Webhook sou
 }
 
 // ==================================================================================================
-// Opening sqlite DB
-$database = new SQLite3("$sqdb_file", SQLITE3_OPEN_CREATE | SQLITE3_OPEN_READWRITE);
-
-// Errors are emitted as warnings by default, enable proper error handling.
-$database->enableExceptions(true);
-$database->exec('PRAGMA journal_mode = wal;');
-$database->exec("PRAGMA busy_timeout=5000");
-
 // Extract Token key name, which is supposed to be a name of the wahtever app/DX OI system.
-$query = "SELECT * FROM whdc_tokens WHERE token='{$token}' ORDER BY date DESC";
-$result = $database->query($query);
-$row = $result->fetchArray(SQLITE3_ASSOC);
-/* Bug in sqlite that causes it to always write an error out.
-   if ($database->LastErrorCode()) {
-   fwrite($handle, "$date - SELECT ERROR: " . $database->LastErrorMsg() . "\n");
-   }
-*/
+$token_sql = "SELECT * FROM whdc_tokens WHERE token='{$token}' ORDER BY date DESC";
+$token_query =  mysqli_query($dbWhdc, $token_sql);
+if (mysqli_error($dbWhdc)) {
+    tolog("SQL", mysqli_error($dbWhdc), $handle);
+}
+
+$row = mysqli_fetch_assoc($token_query);
+
 if ((isset($row['token'])) && (strlen($row['token'])) > 40) {
     
     // Validate token
@@ -128,7 +118,7 @@ Welcome
 } else {
     $line = "FATAL: Authentication error. No valid token provided. Access denied!";
     header( "HTTP/1.1 401 Unauthorized" );
-    fwrite($handle, "$date - $line \n");
+    tolog("AUTH", $line, $handle);
     
     $content .= "<FORM action=\"whdclist.php\" method=\"post\" \>\n";
     $content .= "&nbsp; Token : &nbsp;<input type=\"text\" class=\"text\" name=\"Authorization\" value=\"\" size=\"80\" maxlength=\"256\"> &nbsp;";
@@ -153,15 +143,14 @@ Welcome
     )";
 */
 
-$query = "SELECT * FROM whdc WHERE token='{$token_name}' ORDER BY date DESC";
-$result = $database->query($query);
-
-if ($database->LastErrorCode()) {
-    fwrite($handle, "$date - While ERROR: " . $database->LastErrorMsg() . "\n");
+$data_sql = "SELECT * FROM whdc WHERE tenant_name='{$token_name}' ORDER BY date DESC";
+$data_query =  mysqli_query($dbWhdc, $data_sql);
+if (mysqli_error($dbWhdc)) {
+    tolog("SQL", mysqli_error($dbWhdc), $handle);
 }
 
 $count = 1;
-while ($row = $result->fetchArray(SQLITE3_ASSOC)) {
+while ($row = mysqli_fetch_assoc($data_query)) {
     // Handy for troubleshooting
     //$line =  "ID: {$row['id']}, Remote IP: {$row['rem_address']}, Subject: {$row['subject']}, Date: {$row['date']}<br>";
     //fwrite($handle, "$date - $line \n");
@@ -188,7 +177,7 @@ while ($row = $result->fetchArray(SQLITE3_ASSOC)) {
     $content .= "<table>";
     $content .= "<tr class=\"h\"><td colspan=\"2\"> $status - " . str_replace("_", " ", $row['subject']) . "</td></tr>";
     $content .= "<tr><td class=\"e\">Recording Date GMT</td><td class=\"v\"> {$row['date']}   </td></tr>";
-    $content .= "<tr><td class=\"e\">Sender </td><td class=\"v\"> {$row['token']} from {$row['rem_address']}</td></tr>";
+    $content .= "<tr><td class=\"e\">Sender </td><td class=\"v\"> {$row['tenant_name']} from {$row['rem_address']}</td></tr>";
     $fixed_text = json_encode($fixed_tmp, JSON_PRETTY_PRINT);
     
     $content .= "<tr><td class=\"v\" colspan=\"2\"><pre>$fixed_text</pre></td></tr>";
@@ -200,7 +189,23 @@ while ($row = $result->fetchArray(SQLITE3_ASSOC)) {
 
 if ($count == 1) {
     $content .= "<table>";
-    $content .= "<tr class=\"h\"><td>No requests for this Token have been recorded!</td></tr>";
+    $content .= "<tr class=\"h\"><td>No requests for this Tenant have been recorded! - displaying last 10 log entries</td></tr>";
+
+    // Extract last 10 lines
+    $file = file("/var/www/logs/whdc.log");
+    $data = array_slice(file('/var/www/logs/whdc.log'), -10);
+    $logcontent = "";
+    $linecnt = 1;
+    foreach ($data as $line) {
+        $logcontent.= $line;
+        $linecnt++;
+    }
+    if ($linecnt == 1) {
+        $logcontent = ' FATAL => Logfile empty. No data!';
+    }
+
+    $content .= "<tr class=\"v\"><td><PRE>$logcontent</PRE></td></tr>";
+    
     $content .= "</table>";
 }
 
@@ -208,7 +213,6 @@ if ($count == 1) {
 $content .= "</div></body>\n</html>";
 
 // Close all
-$database->close();
 fclose($handle);
 print "$content";
 

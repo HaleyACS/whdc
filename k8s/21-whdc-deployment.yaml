@@ -22,6 +22,25 @@ spec:
       #serviceAccountName: whdc-serviceaccount
       containers:
       - env:
+        - name: MYSQL_DATABASE
+          value: whdc
+        - name: MYSQL_HOST
+          value: svc-whdc-db
+        - name: MYSQL_ROOT_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: whdc-db-access
+              key: rootpassword
+        - name: MYSQL_USER
+          valueFrom:
+            secretKeyRef:
+              name: whdc-db-access
+              key: username
+        - name: MYSQL_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: whdc-db-access
+              key: password
         - name: SERVER_NAME
           value: "whdc"
         - name: SERVER_ADMIN

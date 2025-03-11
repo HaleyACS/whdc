@@ -10,9 +10,6 @@ $result = "";
 // Get date.
 $date =  date("Y-m-d H:i:s");
 
-// DB File
-$sqdb_file = '/var/www/files/whdc_database.db';
-
 // Load the token file holding the secret used to create tokens.
 // This file is created at deployment.
 include_once('/var/www/files/tokens.inc');
@@ -25,7 +22,7 @@ include_once('/var/www/files/auth.inc');
 $handle = fopen("/var/www/logs/whdc.log", "a");
 
 // Create handle for info-log file.
-$info = fopen("/var/www/logs/whdc-info.log", "a");
+$infolog = fopen("/var/www/logs/whdc-info.log", "a");
 
 // Extract remote IP adress of sender
 $remip = $_SERVER['REMOTE_ADDR'];
@@ -65,20 +62,15 @@ if ((isset($headers['Authorization'])) && (strlen($headers['Authorization']) > 0
 }
 
 // ==================================================================================================
-// Opening sqlite DB
-$database = new SQLite3("$sqdb_file", SQLITE3_OPEN_CREATE | SQLITE3_OPEN_READWRITE);
-
-// Errors are emitted as warnings by default, enable proper error handling.
-$database->enableExceptions(true);
-$database->exec('PRAGMA journal_mode = wal;');
-$database->exec("PRAGMA busy_timeout=5000");
-
 // Extract Token key name, which is supposed to be a name of the wahtever app/DX OI system.
-$query = "SELECT * FROM whdc_tokens WHERE token='{$token}' ORDER BY date DESC LIMIT 1";
+$token_sql = "SELECT * FROM whdc_tokens WHERE token='{$token}' ORDER BY date DESC LIMIT 1";
 $DEBUG && print "$query \n";
 
-$result = $database->query($query);
-$row = $result->fetchArray(SQLITE3_ASSOC);
+$token_query =  mysqli_query($dbWhdc, $token_sql);
+if (mysqli_error($dbWhdc)) {
+    tolog("SQL", mysqli_error($dbWhdc), $handle);
+}
+$row = mysqli_fetch_assoc($token_query);
 /* Used for deep troubleshooting only.
   if ($database->LastErrorCode()) {
   fwrite($handle, "$date - ERROR: " . $database->LastErrorMsg() . "\n");
@@ -109,7 +101,7 @@ if ($is_token_valid === TRUE) {
 } else {
     $line = "FATAL: $remip Authentication error. No valid token provided. Access denied!";
     header( "HTTP/1.1 401 Unauthorized" );
-    fwrite($handle, "$date - $line \n");
+    tolog("AUTH", $line, $handle);
     print "$line \n";
     $database->close();
     fclose($handle);
@@ -150,45 +142,63 @@ $logs_base64 = logs_catcher("encode", $decoded);
 $date =  date("Y-m-d H:i:s");
 
 // Compute SQL code to insert data into sqlite DB.
-$result_sql = "INSERT INTO whdc (subject, token, rem_address, json_base64, logs_base64, date) VALUES ('{$subject}','{$token_name}','{$remip}','{$encoded_payload}','$logs_base64','{$date}')";
+$result_sql = "INSERT INTO whdc (subject, tenant_name, rem_address, json_base64, logs_base64, date) VALUES ('{$subject}','{$token_name}','{$remip}','{$encoded_payload}','$logs_base64','{$date}')";
 $DEBUG && print "printing SQL insert: \n";
 $DEBUG &&  print "$result_sql \n";
 
 // Perform the insert
-$database->exec($result_sql);
+$result_query =  mysqli_query($dbWhdc, $result_sql);
+if (mysqli_error($dbWhdc)) {
+    tolog("SQL", mysqli_error($dbWhdc), $handle);
+}
 
 // Write into log file.
-$line =  "Remote IP: {$remip}, Subject: {$subject}";
-fwrite($handle, "$date - $line \n");
-$DEBUG && fwrite($handle, "$date - Dataset inserted \n");
+$line =  "From \"{$remip}\" for \"{$token_name}\", Subject: {$subject}";
+tolog("WHDC", $line, $handle);
 
 // Write detail into INFO file
 if ($INFO) {
-    fwrite($info, "$date - $line \n");
+    tolog("INFO", $line, $infolog);
     $jsonline = print_r($decoded, true);
-    fwrite($info, " => JSON payload \n $jsonline \n");
+    tolog("INFO", " => JSON payload \n $jsonline", $infolog);
     $headers = getallheaders();
     $headers = print_r($headers, true);
-    fwrite($info, " => Headers \n $headers \n\n");
+    tolog("INFO", " => Headers \n $headers \n\n", $infolog);
+
 }
 
 
 // Clean up DB - we only want 25 entries max.
 // Identify from which entry we want to remove stuff.
-$count = "SELECT id FROM whdc WHERE token='{$token_name}' ORDER BY ID DESC LIMIT 1 OFFSET 24;";
-$DEBUG && fwrite($handle, "$date - SQL Count: $count \n");
-$limit = $database->querySingle($count);
-
-if (strlen($limit) > 0) {
-    $delete = "DELETE FROM whdc WHERE id < $limit AND token='{$token_name}';";
-    $DEBUG && fwrite($handle, "$date - SQL delete: $delete \n");
-    $database->exec($delete);
+$count_sql = "SELECT id FROM whdc WHERE tenant_name='{$token_name}' ORDER BY ID DESC LIMIT 1 OFFSET 24;";
+$count_query =  mysqli_query($dbWhdc, $count_sql);
+if (mysqli_error($dbWhdc)) {
+    tolog("SQL", mysqli_error($dbWhdc), $handle);
 }
 
+$entries = mysqli_num_rows($count_query);
+$DEBUG && tolog("SQL", "$entries row(s) to delete.", $handle);
+
+// In case previous query gave some resulting row, check on the deletion function.
+if ($entries > 0) {
     
-$database->close();
+    $row = mysqli_fetch_assoc($count_query);
+
+    $limit = $row['id'];
+
+    if (strlen($limit) > 0) {
+        $delete_sql = "DELETE FROM whdc WHERE id < $limit AND tenant_name='{$token_name}';";
+        $DEBUG && tolog("SQL", "$delete_sql", $handle);
+        $delete_query =  mysqli_query($dbWhdc, $delete_sql);
+        if (mysqli_error($dbWhdc)) {
+            tolog("SQL", mysqli_error($dbWhdc), $handle);
+        }
+    }
+
+}
+
 fclose($handle);
-fclose($info);
+fclose($infolog);
 
 // Functions below
 
