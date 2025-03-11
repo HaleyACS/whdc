@@ -103,7 +103,6 @@ if ($is_token_valid === TRUE) {
     header( "HTTP/1.1 401 Unauthorized" );
     tolog("AUTH", $line, $handle);
     print "$line \n";
-    $database->close();
     fclose($handle);
     exit;
 }
