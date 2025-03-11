@@ -26,7 +26,7 @@ $handle = fopen("/var/www/logs/whdc.log", "a");
 
 // Grab that out of the env.
 $username = getenv('USERNAME');
-$known_pwd_hash = hash('sha256', getenv('PASSWORD'));
+$known_pwd_hash = getenv('PASSWORD');
 $date =  date("Y-m-d H:i:s");
 
 $content = "<!DOCTYPE html>
