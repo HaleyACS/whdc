@@ -41,6 +41,16 @@ spec:
             secretKeyRef:
               name: whdc-db-access
               key: password
+        - name: USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: admin-access
+              key: username
+        - name: PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: admin-access
+              key: password
         - name: SERVER_NAME
           value: "whdc"
         - name: SERVER_ADMIN

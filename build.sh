@@ -26,6 +26,9 @@ PNAME=${FileBase}
 echo "Removing dangling docker images"
 docker rmi $(docker images -f "dangling=true" -q)
 
+echo "  > $Subject - $FileBase $BUILD_VERSION" > release.txt
+echo "  > By $Author" >> release.txt
+
 echo
 echo "*** If you want to apply OS Update, don't use the cache."
 echo -n ">>> Use cache for build [y/n]?: "
