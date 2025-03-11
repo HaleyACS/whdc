@@ -189,11 +189,11 @@ while ($row = mysqli_fetch_assoc($data_query)) {
 
 if ($count == 1) {
     $content .= "<table>";
-    $content .= "<tr class=\"h\"><td>No requests for this Tenant have been recorded! - displaying last 10 log entries</td></tr>";
+    $content .= "<tr class=\"h\"><td>No requests for this Tenant have been recorded! - displaying last 20 log entries</td></tr>";
 
     // Extract last 10 lines
     $file = file("/var/www/logs/whdc.log");
-    $data = array_slice(file('/var/www/logs/whdc.log'), -10);
+    $data = array_slice(file('/var/www/logs/whdc.log'), -20);
     $logcontent = "";
     $linecnt = 1;
     foreach ($data as $line) {
