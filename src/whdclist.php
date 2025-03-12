@@ -6,6 +6,7 @@ $DEBUG = false;
 $result = "";
 $content = "";
 $error = array();
+$func = "whdclist";
 
 // Get date.
 $date =  date("Y-m-d H:i:s");
@@ -78,7 +79,7 @@ Unauthenticated: Please submit the token identifier provided to your Webhook sou
 $token_sql = "SELECT * FROM whdc_tokens WHERE token='{$token}' ORDER BY date DESC";
 $token_query =  mysqli_query($dbWhdc, $token_sql);
 if (mysqli_error($dbWhdc)) {
-    tolog("SQL", mysqli_error($dbWhdc), $handle);
+    tolog("SQL/$func", "$remip " . mysqli_error($dbWhdc), $handle);
 }
 
 $row = mysqli_fetch_assoc($token_query);
@@ -118,7 +119,7 @@ Welcome
 } else {
     $line = "FATAL: Authentication error. No valid token provided. Access denied!";
     header( "HTTP/1.1 401 Unauthorized" );
-    tolog("AUTH", $line, $handle);
+    tolog("AUTH/$func", "$remip " . $line, $handle);
     
     $content .= "<FORM action=\"whdclist.php\" method=\"post\" \>\n";
     $content .= "&nbsp; Token : &nbsp;<input type=\"text\" class=\"text\" name=\"Authorization\" value=\"\" size=\"80\" maxlength=\"256\"> &nbsp;";
@@ -146,7 +147,7 @@ Welcome
 $data_sql = "SELECT * FROM whdc WHERE tenant_name='{$token_name}' ORDER BY date DESC";
 $data_query =  mysqli_query($dbWhdc, $data_sql);
 if (mysqli_error($dbWhdc)) {
-    tolog("SQL", mysqli_error($dbWhdc), $handle);
+    tolog("SQL/$func", "$remip " . mysqli_error($dbWhdc), $handle);
 }
 
 $count = 1;
