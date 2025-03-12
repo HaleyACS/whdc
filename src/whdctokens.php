@@ -55,7 +55,7 @@ if (!isset($_SERVER['PHP_AUTH_USER'])) {
     header('HTTP/1.0 401 Unauthorized');
     echo '<body><h1>Authentication cancelled, well, thanks for the fish... Solong!</h1></body></html>';
     $logtext = "No username provided";
-    tolog("AUTH/$func", "$remip " . $logtext, $handle);
+    tolog("AUTH/$func",  $logtext, $handle);
     exit;
     
 } else {
@@ -65,30 +65,30 @@ if (!isset($_SERVER['PHP_AUTH_USER'])) {
     if ((isset($_SERVER['PHP_AUTH_USER'])) && ($_SERVER['PHP_AUTH_USER'] == $username)) {
         $auth_check = true;
         $logtext = "Valid username";
-        $DEBUG && tolog("AUTH/$func", "$remip " . $logtext, $handle);
+        $DEBUG && tolog("AUTH/$func",  $logtext, $handle);
     } else {
         $auth_check = false;
         $logtext = "Login name incorrect.";
         $auth_message = "$date - $logtext";
-        $DEBUG && tolog("AUTH/$func", "$remip " . $logtext, $handle);
+        $DEBUG && tolog("AUTH/$func",  $logtext, $handle);
     }
 
     $provided_pwd_hash = hash('sha256', $_SERVER['PHP_AUTH_PW']);
     if ((isset($_SERVER['PHP_AUTH_PW'])) && ($provided_pwd_hash == $known_pwd_hash)) {
         $auth_check = true;
         $logtext = "Valid password.";
-        $DEBUG && tolog("AUTH/$func", "$remip " . $logtext, $handle);
+        $DEBUG && tolog("AUTH/$func",  $logtext, $handle);
     } else {
         $auth_check = false;
         $logtext = "Invalid password.";
         $auth_message = "$date - $logtext";
-        $DEBUG && tolog("AUTH/$func", "$remip " . $logtext, $handle);
+        $DEBUG && tolog("AUTH/$func",  $logtext, $handle);
     }
 
     if ($auth_check) {
         $message = ucfirst($username);
         $logtext = "Login by $message granted.";
-        $DEBUG && tolog("AUTH/$func", "$remip " . $logtext, $handle);
+        $DEBUG && tolog("AUTH/$func",  $logtext, $handle);
 
     } else {
         // Clear global variables.
@@ -97,9 +97,9 @@ if (!isset($_SERVER['PHP_AUTH_USER'])) {
         header('WWW-Authenticate: Basic realm="Webhook Collector Token Manager"');
         header('HTTP/1.0 401 Unauthorized');
         echo "<body><h1>$auth_message <br />Well, thanks for the fish... Solong!</h1></body></html>";
-        $DEBUG && tolog("AUTH/$func", "$remip " . $auth_message, $handle);
-        $DEBUG && tolog("PROVIDED/$func", "$remip " . $provided_pwd_hash, $handle);
-        $DEBUG && tolog("COMPARED/$func", "$remip " . $known_pwd_hash, $handle);
+        $DEBUG && tolog("AUTH/$func",  $auth_message, $handle);
+        $DEBUG && tolog("PROVIDED/$func",  $provided_pwd_hash, $handle);
+        $DEBUG && tolog("COMPARED/$func",  $known_pwd_hash, $handle);
         exit;
     }
 }
@@ -220,12 +220,12 @@ if ((isset($_POST['submit'])) && ("{$_POST['submit']}" == "Save")) {
     if ($submit) {
         $query_result =  mysqli_query($dbWhdc, $query_sql);
         if (mysqli_error($dbWhdc)) {
-            tolog("SQL/$func", "$remip " . mysqli_error($dbWhdc), $handle);
+            tolog("SQL/$func",  mysqli_error($dbWhdc), $handle);
         }
 
         if (strlen($error['query']) > 0) {
             $error_message = "ERROR: " . $error['query'] . "\n";
-            tolog("SQL/$func", "$remip " . $error_message, $handle);
+            tolog("SQL/$func",  $error_message, $handle);
             $status = $error_message;
             $content .= "<table>";
             $content .= "<tr>";
@@ -238,7 +238,7 @@ if ((isset($_POST['submit'])) && ("{$_POST['submit']}" == "Save")) {
         }
 
         $logmessage = "Added entry: {$name['valid']} / {$mail['valid']} \n";
-        tolog("SQL/$func", "$remip " . $logmessage, $handle);
+        tolog("SQL/$func",  $logmessage, $handle);
                     
         $status = "<table>";
         $status .= "<tr class=\"v\">";
@@ -259,25 +259,25 @@ if ((isset($_GET['delete'])) && ("{$_GET['delete']}" == "Yes")) {
         $tkrow_sql = "SELECT * FROM whdc_tokens WHERE id={$_GET['deleteid']};";
         $tkrow_query =  mysqli_query($dbWhdc, $tkrow_sql);        
         if (mysqli_error($dbWhdc)) {
-            tolog("SQL/$func", "$remip " . mysqli_error($dbWhdc), $handle);
+            tolog("SQL/$func",  mysqli_error($dbWhdc), $handle);
         }
         $rowtodel = mysqli_fetch_assoc($tkrow_query);
 
         $delete_token = "DELETE FROM whdc_tokens WHERE id='{$rowtodel['id']}';";
         $deltoken_query =  mysqli_query($dbWhdc, $delete_token);
         if (mysqli_error($dbWhdc)) {
-            tolog("SQL/$func", "$remip " . mysqli_error($dbWhdc), $handle);
+            tolog("SQL/$func",  mysqli_error($dbWhdc), $handle);
         }
         $logmessage = "Removed tenant-config for {$rowtodel['name']}";
-        tolog("DEL/$func", "$remip " . $logmessage, $handle);
+        tolog("DEL/$func",  $logmessage, $handle);
         
         $delete_data = "DELETE FROM whdc WHERE tenant_name='{$rowtodel['name']}';";
         $deldata_query =  mysqli_query($dbWhdc, $delete_data);
         if (mysqli_error($dbWhdc)) {
-            tolog("SQL/$func", "$remip " . mysqli_error($dbWhdc), $handle);
+            tolog("SQL/$func",  mysqli_error($dbWhdc), $handle);
         }
         $logmessage = "Removed tenant-data for {$rowtodel['name']}";
-        tolog("DEL/$func", "$remip " . $logmessage, $handle);
+        tolog("DEL/$func",  $logmessage, $handle);
         
         $status = "<table>";
         $status .= "<tr class=\"v\">";
@@ -298,12 +298,12 @@ if ((isset($_GET['delete'])) && ("{$_GET['delete']}" == "Yes")) {
 $query_sql = "SELECT * FROM whdc_tokens ORDER BY date DESC";
 $query_result =  mysqli_query($dbWhdc, $query_sql);
 if (mysqli_error($dbWhdc)) {
-    tolog("SQL/$func", "$remip " . mysqli_error($dbWhdc), $handle);
+    tolog("SQL/$func",  mysqli_error($dbWhdc), $handle);
 }
 
 if (strlen($error['query']) > 0) {
     $error_message = "$date - ERROR: " . $error['query'] . "\n";
-    tolog("SQL/$func", "$remip " . $error_message, $handle);
+    tolog("SQL/$func",  $error_message, $handle);
     $status = $error_message;
 }
 

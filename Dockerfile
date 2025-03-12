@@ -35,7 +35,7 @@ ADD src/favicon.ico /tmp/
 ADD src/webhook-logo.svg /tmp/
 # COPY websocket-php.tar.gz /tmp/
 COPY --from=composer:latest /usr/bin/composer /usr/local/bin/composer
-RUN cd /var/www/html && /usr/local/bin/composer require phrity/websocket && /usr/local/bin/composer require freedsx/snmp && chown www-data:www-data -R vendor && tar zcvf /var/www/html/php-websocket.tar.gz vendor
+RUN cd /var/www/html && /usr/local/bin/composer require phrity/websocket && /usr/local/bin/composer require freedsx/snmp && chown www-data:www-data -R vendor # && tar zcf /tmp/php-websocket.tar.gz vendor
 RUN chown www-data:www-data /tmp/*
 
 USER www-data

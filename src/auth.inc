@@ -16,10 +16,16 @@ if (mysqli_connect_errno()) {
 /* Log handler */
 
 function tolog ($function, $text, $target) {
-    global $handle, $infolog;
+    global $handle, $infolog, $_SERVER;
+
+    // Extract remote IP
+    $remip = $_SERVER['REMOTE_ADDR'];
+
 
     $date =  date("Y-m-d H:i:s");
-    fwrite($target, "$date [$function] $text \n");
+    $ftext = wordwrap($text, 100, "\n\t", true);
+
+    fwrite($target, "$date [$function - $remip] $ftext \n");
 
 } // tolog
 

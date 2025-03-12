@@ -1,9 +1,16 @@
 #!/bin/bash
 #
 echo
-echo " => Web Hook data collector"
 mv -f /tmp/release.txt /var/www/files/release.txt
 cat /var/www/files/release.txt
+# Load variables
+if [ -f  /etc/os-release ]
+then
+    . /etc/os-release
+fi
+
+echo " > $PRETTY_NAME"
+
 echo
 echo -n " => Installing: "
 
@@ -64,6 +71,7 @@ rm -f /tmp/install_mysqldb.sh ${FILES}/whdc.sql
 unset MYSQL_ROOT_PASSWORD
 
 sync
+echo
 echo " => Setup done. Launching!"
 echo
 # Run php-fpm
