@@ -11,7 +11,7 @@ $result = "";
 $date =  date("Y-m-d H:i:s");
 
 // Function name - for logging
-$func = "whdclist";
+$func = "whdc";
 
 // Load the token file holding the secret used to create tokens.
 // This file is created at deployment.
