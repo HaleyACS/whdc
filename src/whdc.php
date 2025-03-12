@@ -10,6 +10,9 @@ $result = "";
 // Get date.
 $date =  date("Y-m-d H:i:s");
 
+// Function name - for logging
+$func = "whdclist";
+
 // Load the token file holding the secret used to create tokens.
 // This file is created at deployment.
 include_once('/var/www/files/tokens.inc');
@@ -153,8 +156,8 @@ if (mysqli_error($dbWhdc)) {
 }
 
 // Write into log file.
-$line =  "From \"{$remip}\" for \"{$token_name}\", Subject: {$subject}";
-tolog("WHDC/$func", "$remip " . $line, $handle);
+$line =  " => \"{$token_name}\", Subject: {$subject}";
+tolog("PUSH/$func", "$remip " . $line, $handle);
 
 // Write detail into INFO file
 if ($INFO) {
