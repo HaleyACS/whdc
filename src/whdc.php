@@ -68,7 +68,7 @@ $DEBUG && print "$query \n";
 
 $token_query =  mysqli_query($dbWhdc, $token_sql);
 if (mysqli_error($dbWhdc)) {
-    tolog("SQL", mysqli_error($dbWhdc), $handle);
+    tolog("SQL/$func", "$remip " . mysqli_error($dbWhdc), $handle);
 }
 $row = mysqli_fetch_assoc($token_query);
 /* Used for deep troubleshooting only.
@@ -101,7 +101,8 @@ if ($is_token_valid === TRUE) {
 } else {
     $line = "FATAL: $remip Authentication error. No valid token provided. Access denied!";
     header( "HTTP/1.1 401 Unauthorized" );
-    tolog("AUTH", $line, $handle);
+    tolog("AUTH/$func", "$remip " . $line, $handle);
+    tolog("TOKEN/$func", "$remip " . $headers['Authorization'], $handle);
     print "$line \n";
     fclose($handle);
     exit;
@@ -148,21 +149,21 @@ $DEBUG &&  print "$result_sql \n";
 // Perform the insert
 $result_query =  mysqli_query($dbWhdc, $result_sql);
 if (mysqli_error($dbWhdc)) {
-    tolog("SQL", mysqli_error($dbWhdc), $handle);
+    tolog("SQL/$func", "$remip " . mysqli_error($dbWhdc), $handle);
 }
 
 // Write into log file.
 $line =  "From \"{$remip}\" for \"{$token_name}\", Subject: {$subject}";
-tolog("WHDC", $line, $handle);
+tolog("WHDC/$func", "$remip " . $line, $handle);
 
 // Write detail into INFO file
 if ($INFO) {
-    tolog("INFO", $line, $infolog);
+    tolog("INFO/$func", "$remip " . $line, $infolog);
     $jsonline = print_r($decoded, true);
-    tolog("INFO", " => JSON payload \n $jsonline", $infolog);
+    tolog("INFO/$func", "$remip " . " => JSON payload \n $jsonline", $infolog);
     $headers = getallheaders();
     $headers = print_r($headers, true);
-    tolog("INFO", " => Headers \n $headers \n\n", $infolog);
+    tolog("INFO/$func", "$remip " . " => Headers \n $headers \n\n", $infolog);
 
 }
 
@@ -172,11 +173,11 @@ if ($INFO) {
 $count_sql = "SELECT id FROM whdc WHERE tenant_name='{$token_name}' ORDER BY ID DESC LIMIT 1 OFFSET 24;";
 $count_query =  mysqli_query($dbWhdc, $count_sql);
 if (mysqli_error($dbWhdc)) {
-    tolog("SQL", mysqli_error($dbWhdc), $handle);
+    tolog("SQL/$func", "$remip " . mysqli_error($dbWhdc), $handle);
 }
 
 $entries = mysqli_num_rows($count_query);
-$DEBUG && tolog("SQL", "$entries row(s) to delete.", $handle);
+$DEBUG && tolog("SQL/$func", "$remip " . "$entries row(s) to delete.", $handle);
 
 // In case previous query gave some resulting row, check on the deletion function.
 if ($entries > 0) {
@@ -187,10 +188,10 @@ if ($entries > 0) {
 
     if (strlen($limit) > 0) {
         $delete_sql = "DELETE FROM whdc WHERE id < $limit AND tenant_name='{$token_name}';";
-        $DEBUG && tolog("SQL", "$delete_sql", $handle);
+        $DEBUG && tolog("SQL/$func", "$remip " . "$delete_sql", $handle);
         $delete_query =  mysqli_query($dbWhdc, $delete_sql);
         if (mysqli_error($dbWhdc)) {
-            tolog("SQL", mysqli_error($dbWhdc), $handle);
+            tolog("SQL/$func", "$remip " . mysqli_error($dbWhdc), $handle);
         }
     }
 
