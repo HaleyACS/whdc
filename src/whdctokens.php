@@ -64,8 +64,9 @@ if (!isset($_SERVER['PHP_AUTH_USER'])) {
     $auth_check = false;
     if ((isset($_SERVER['PHP_AUTH_USER'])) && ($_SERVER['PHP_AUTH_USER'] == $username)) {
         $auth_check = true;
-        $logtext = "Valid username";
+        $logtext = "$username logged in.";
         $DEBUG && tolog("AUTH/$func",  $logtext, $handle);
+        tolog("AUTH/$func",  $logtext, $handle);
     } else {
         $auth_check = false;
         $logtext = "Login name incorrect.";
