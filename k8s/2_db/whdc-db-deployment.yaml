@@ -1,0 +1,77 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  namespace: "whdc"
+  name: whdc-db
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: whdc-db
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: whdc-db
+        identifier: mariadb
+    spec:
+      #serviceAccountName: whdc-serviceaccount
+      containers:
+      - env:
+        - name: MYSQL_DATABASE
+          value: whdc
+        - name: MYSQL_ROOT_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: whdc-db-access
+              key: rootpassword
+        - name: MYSQL_USER
+          valueFrom:
+            secretKeyRef:
+              name: whdc-db-access
+              key: username
+        - name: MYSQL_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: whdc-db-access
+              key: password
+        image: mariadb:10.5
+        #imagePullPolicy: "Always"
+        name: whdc-db
+        resources:
+          limits:
+            cpu: 200m
+            memory: 512Mi
+          requests:
+            cpu: 100m
+            memory: 256Mi
+        livenessProbe:
+          exec:
+            command:
+              - sh
+              - -c
+              - "mysqladmin ping -u root -p${MYSQL_ROOT_PASSWORD}"
+          periodSeconds: 15
+          failureThreshold: 30
+          timeoutSeconds: 5
+        readinessProbe:
+          exec:
+            command:
+              - sh
+              - -c
+              - "mysqladmin ping -u root -p${MYSQL_ROOT_PASSWORD}"
+          periodSeconds: 15
+          failureThreshold: 3
+          timeoutSeconds: 5
+        volumeMounts:
+        - mountPath: /var/lib/mysql
+          name: whdc-db-volume
+      restartPolicy: Always
+      volumes:
+      - name: whdc-db-volume
+        persistentVolumeClaim:
+          claimName: whdc-db-claim
+status: {}

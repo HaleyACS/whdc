@@ -1,0 +1,20 @@
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  namespace: "whdc"
+  name: "whdc-db-volume"
+  labels:
+    type: local
+spec:
+  storageClassName: "manual"
+  claimRef:
+    name: "whdc-db-claim"
+    namespace: "whdc"
+  capacity:
+    storage: 100Mi
+  accessModes:
+    - ReadWriteOnce
+  hostPath:
+    path: /data/whdc/db.data
+status: {}
