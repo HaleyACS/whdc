@@ -5,6 +5,10 @@ with on the CLI if required.  Note that if VPC's are not wanted, the
 deployment works without, but will delete all data (including the
 access tokens) on every restart.
 
+In case you hase the mariadb (mysql clone) deployment, make sure to create the data-base pod first.
+See details in [2_db/README.md](2_db/README.md)
+
+
 ### Create a database access secret
 ```
 kubectl create secret generic whdc-db-access --from-literal=username=whdc --from-literal=password='SecretPWD' --from-literal=rootpassword='RootSecretPWD' -n whdc
