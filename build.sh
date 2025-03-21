@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 
 # web API Data Collector => whdc
